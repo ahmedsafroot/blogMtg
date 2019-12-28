@@ -79,10 +79,11 @@ class PostsController extends AppController {
     public function isAuthorized($user) {
         $this->loadModel('User');
         // admin can not add posts
-        if ($this->action === 'add') {
-            $userid=$this->Auth->user('id');
+        $userid=$this->Auth->user('id');
             $user_data = $this->User->findById($userid);
             $user_data=$user_data["User"];
+        if ($this->action === 'add') {
+            
             if($user_data["role"]=="admin")
             {
                 $this->Flash->error(__('You are not authorized to add post'));
@@ -94,7 +95,7 @@ class PostsController extends AppController {
         // The owner of a post can edit and delete it
         if (in_array($this->action, array('edit', 'delete'))) {
             $postId = (int) $this->request->params['pass'][0];
-            if ($this->Post->isOwnedBy($postId, $user['id'])) {
+            if ($this->Post->isOwnedBy($postId, $user['id']) || $user_data["role"]=="admin") {
                 return true;
             }
             else
