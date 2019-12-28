@@ -1,9 +1,17 @@
 <?php
+
 class PostsController extends AppController {
     public $helpers = array('Html', 'Form', 'Flash');
     public $components = array('Flash');
     public function index() {
-        $this->set('posts', $this->Post->find('all'));
+        $this->loadModel('User');
+
+        $userid=$this->Auth->user('id');
+        $user_data = $this->User->findById($userid);
+        $user_data=$user_data["User"];
+
+        $this->set(array('posts'=>$this->Post->find('all'),"user"=>$user_data));
+
     }
     public function view($id = null) {
         if (!$id) {
@@ -18,14 +26,14 @@ class PostsController extends AppController {
     }
     public function add() {
         if ($this->request->is('post')) {
-            $this->Post->create();
+            $this->request->data['Post']['user_id'] = $this->Auth->user('id');
             if ($this->Post->save($this->request->data)) {
                 $this->Flash->success(__('Your post has been saved.'));
                 return $this->redirect(array('action' => 'index'));
             }
-            $this->Flash->error(__('Unable to add your post.'));
         }
     }
+    
     public function edit($id = null) {
         if (!$id) {
             throw new NotFoundException(__('Invalid post'));
@@ -66,5 +74,36 @@ class PostsController extends AppController {
         }
     
         return $this->redirect(array('action' => 'index'));
+    }
+
+    public function isAuthorized($user) {
+        $this->loadModel('User');
+        // admin can not add posts
+        if ($this->action === 'add') {
+            $userid=$this->Auth->user('id');
+            $user_data = $this->User->findById($userid);
+            $user_data=$user_data["User"];
+            if($user_data["role"]=="admin")
+            {
+                $this->Flash->error(__('You are not authorized to add post'));
+                return $this->redirect('/'); 
+            }
+            return true;
+        }
+    
+        // The owner of a post can edit and delete it
+        if (in_array($this->action, array('edit', 'delete'))) {
+            $postId = (int) $this->request->params['pass'][0];
+            if ($this->Post->isOwnedBy($postId, $user['id'])) {
+                return true;
+            }
+            else
+            {
+                $this->Flash->error(__('You are not authorized to edit this post'));
+                return $this->redirect('/');
+            }
+        }
+    
+        return parent::isAuthorized($user);
     }
 }

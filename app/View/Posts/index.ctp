@@ -1,9 +1,24 @@
 <h1>Blog posts</h1>
 
-<?php echo $this->Html->link(
+<?php 
+if($user["role"]!="admin")
+{
+echo $this->Html->link(
     'Add Post',
     array('controller' => 'posts', 'action' => 'add')
-); ?>
+)." /   "; 
+}
+echo $this->Html->link(
+    'Logout',
+    array('controller' => 'users', 'action' => 'logout')
+)." /   "; 
+
+echo $this->Html->link(
+    'Edit Profile',
+    array('controller' => 'users', 'action' => 'edit',$user["id"])
+);
+
+?>
 <table>
     <tr>
         <th>Id</th>
@@ -24,6 +39,8 @@ array('controller' => 'posts', 'action' => 'view', $post['Post']['id'])); ?>
         <td>
 
             <?php
+            if($user["role"]=="admin" || $user["id"]==$post["Post"]["user_id"])
+            {
             echo $this->Form->postLink(
                 'Delete',
                 array('action' => 'delete', $post['Post']['id']),
@@ -33,6 +50,7 @@ array('controller' => 'posts', 'action' => 'view', $post['Post']['id'])); ?>
                     'Edit',
                     array('action' => 'edit', $post['Post']['id'])
                 );
+            }
             ?>
         </td>
         <td><?php echo $post['Post']['created']; ?></td>
